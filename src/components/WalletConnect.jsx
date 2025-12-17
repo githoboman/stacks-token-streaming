@@ -1,20 +1,25 @@
 import { useConnect } from '@stacks/connect-react';
 
-const WalletConnect = ({ userSession, userData, onSignOut }) => {
+const WalletConnect = ({ wallet }) => {
   const { doOpenAuth } = useConnect();
 
   const handleConnect = () => {
-    doOpenAuth();
+    wallet.connectWallet();
   };
 
-  if (userData) {
+  const handleSignOut = () => {
+    wallet.disconnectWallet();
+  };
+
+  const walletInfo = wallet.getWalletInfo();
+
+  if (walletInfo.isConnected) {
     return (
       <div className="wallet-info">
         <span className="wallet-address">
-          Connected: {userData.profile.stxAddress.testnet.slice(0, 6)}...
-          {userData.profile.stxAddress.testnet.slice(-4)}
+          Connected: {walletInfo.shortAddress}
         </span>
-        <button onClick={onSignOut} className="sign-out-btn">
+        <button onClick={handleSignOut} className="sign-out-btn">
           Sign Out
         </button>
       </div>
@@ -22,8 +27,8 @@ const WalletConnect = ({ userSession, userData, onSignOut }) => {
   }
 
   return (
-    <button onClick={handleConnect} className="connect-btn">
-      Connect Wallet
+    <button onClick={handleConnect} className="connect-btn" disabled={wallet.loading}>
+      {wallet.loading ? 'Connecting...' : 'Connect Wallet'}
     </button>
   );
 };

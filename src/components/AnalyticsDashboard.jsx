@@ -1,99 +1,70 @@
 import { useState, useEffect } from 'react';
-import { callReadOnlyFunction, contractPrincipalCV } from '@stacks/transactions';
-import { ANALYTICS_CONTRACT_ADDRESS, ANALYTICS_CONTRACT_NAME, CONTRACT_FUNCTIONS } from '../utils/constants';
 
-const AnalyticsDashboard = ({ userSession, network }) => {
-  const [globalStats, setGlobalStats] = useState(null);
-  const [userStats, setUserStats] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [userAddress, setUserAddress] = useState('');
+const AnalyticsDashboard = ({ analytics, wallet, isLoading }) => {
+  const [refreshing, setRefreshing] = useState(false);
 
-  useEffect(() => {
-    if (userSession && userSession.isUserSignedIn()) {
-      const address = userSession.loadUserData().profile.stxAddress.testnet;
-      setUserAddress(address);
-      loadAnalytics(address);
-    }
-  }, [userSession]);
-
-  const loadAnalytics = async (address) => {
-    setLoading(true);
+  const handleRefresh = async () => {
+    setRefreshing(true);
     try {
-      // Load global statistics
-      const globalStatsResult = await callReadOnlyFunction({
-        contractAddress: ANALYTICS_CONTRACT_ADDRESS,
-        contractName: ANALYTICS_CONTRACT_NAME,
-        functionName: CONTRACT_FUNCTIONS.GET_GLOBAL_STATS,
-        functionArgs: [],
-        network,
-        senderAddress: address,
-      });
-
-      setGlobalStats(globalStatsResult.value);
-
-      // Load user statistics
-      const senderStatsResult = await callReadOnlyFunction({
-        contractAddress: ANALYTICS_CONTRACT_ADDRESS,
-        contractName: ANALYTICS_CONTRACT_NAME,
-        functionName: CONTRACT_FUNCTIONS.GET_SENDER_STATS,
-        functionArgs: [contractPrincipalCV(address)],
-        network,
-        senderAddress: address,
-      });
-
-      const recipientStatsResult = await callReadOnlyFunction({
-        contractAddress: ANALYTICS_CONTRACT_ADDRESS,
-        contractName: ANALYTICS_CONTRACT_NAME,
-        functionName: CONTRACT_FUNCTIONS.GET_RECIPIENT_STATS,
-        functionArgs: [contractPrincipalCV(address)],
-        network,
-        senderAddress: address,
-      });
-
-      setUserStats({
-        sender: senderStatsResult.value,
-        recipient: recipientStatsResult.value
-      });
-
+      await analytics.refreshAnalytics();
     } catch (error) {
-      console.error('Error loading analytics:', error);
+      console.error('Failed to refresh analytics:', error);
     }
-    setLoading(false);
+    setRefreshing(false);
   };
 
-  if (loading) {
+  const handleRateUser = async (ratedUser, streamId, rating) => {
+    try {
+      await analytics.rateUser(ratedUser, streamId, rating);
+      console.log('User rated successfully');
+    } catch (error) {
+      console.error('Failed to rate user:', error);
+      alert('Failed to rate user. Please try again.');
+    }
+  };
+
+  if (isLoading && !analytics.data) {
     return <div className="loading">Loading analytics...</div>;
   }
 
   return (
     <div className="analytics-dashboard">
-      <h2>Network Analytics</h2>
+      <div className="analytics-header">
+        <h2>Network Analytics</h2>
+        <button
+          onClick={handleRefresh}
+          disabled={refreshing}
+          className="refresh-btn"
+        >
+          {refreshing ? 'Refreshing...' : 'Refresh'}
+        </button>
+      </div>
 
-      {globalStats && (
+      {analytics.data && (
         <div className="global-stats">
           <h3>Global Statistics</h3>
           <div className="stats-grid">
             <div className="stat-card">
               <h4>Total Streams</h4>
-              <p className="stat-value">{globalStats['total-streams']?.value || 0}</p>
+              <p className="stat-value">{analytics.data.totalStreams}</p>
             </div>
             <div className="stat-card">
               <h4>Total Volume</h4>
-              <p className="stat-value">{globalStats['total-volume']?.value || 0} STX</p>
+              <p className="stat-value">{analytics.data.totalVolume} STX</p>
             </div>
             <div className="stat-card">
               <h4>Completed Streams</h4>
-              <p className="stat-value">{globalStats['completed-streams']?.value || 0}</p>
+              <p className="stat-value">{analytics.data.completedStreams}</p>
             </div>
             <div className="stat-card">
               <h4>Completion Rate</h4>
-              <p className="stat-value">{globalStats['completion-rate']?.value || 0}%</p>
+              <p className="stat-value">{analytics.data.completionRate}%</p>
             </div>
           </div>
         </div>
       )}
 
-      {userStats && (
+      {analytics.userStats && (
         <div className="user-stats">
           <h3>Your Statistics</h3>
 
@@ -102,19 +73,19 @@ const AnalyticsDashboard = ({ userSession, network }) => {
             <div className="stats-grid">
               <div className="stat-card">
                 <h5>Streams Created</h5>
-                <p>{userStats.sender['total-streams-created']?.value || 0}</p>
+                <p>{analytics.userStats.sender?.totalStreamsCreated || 0}</p>
               </div>
               <div className="stat-card">
                 <h5>Total Sent</h5>
-                <p>{userStats.sender['total-amount-sent']?.value || 0} STX</p>
+                <p>{analytics.userStats.sender?.totalAmountSent || 0} STX</p>
               </div>
               <div className="stat-card">
                 <h5>Completed</h5>
-                <p>{userStats.sender['streams-completed']?.value || 0}</p>
+                <p>{analytics.userStats.sender?.streamsCompleted || 0}</p>
               </div>
               <div className="stat-card">
                 <h5>Reputation</h5>
-                <p>{userStats.sender['reputation-score']?.value || 50}/100</p>
+                <p>{analytics.userStats.sender?.reputationScore || 50}/100</p>
               </div>
             </div>
           </div>
@@ -124,24 +95,31 @@ const AnalyticsDashboard = ({ userSession, network }) => {
             <div className="stats-grid">
               <div className="stat-card">
                 <h5>Streams Received</h5>
-                <p>{userStats.recipient['total-streams-received']?.value || 0}</p>
+                <p>{analytics.userStats.recipient?.totalStreamsReceived || 0}</p>
               </div>
               <div className="stat-card">
                 <h5>Total Received</h5>
-                <p>{userStats.recipient['total-amount-received']?.value || 0} STX</p>
+                <p>{analytics.userStats.recipient?.totalAmountReceived || 0} STX</p>
               </div>
               <div className="stat-card">
                 <h5>Withdrawn</h5>
-                <p>{userStats.recipient['total-withdrawn']?.value || 0} STX</p>
+                <p>{analytics.userStats.recipient?.totalWithdrawn || 0} STX</p>
               </div>
               <div className="stat-card">
                 <h5>Reputation</h5>
-                <p>{userStats.recipient['reputation-score']?.value || 50}/100</p>
+                <p>{analytics.userStats.recipient?.reputationScore || 50}/100</p>
               </div>
             </div>
           </div>
         </div>
       )}
+
+      {/* Rating functionality would go here */}
+      <div className="rating-section">
+        <h3>Rate Stream Partners</h3>
+        <p>Rating functionality available after stream completion.</p>
+        {/* TODO: Implement rating UI */}
+      </div>
     </div>
   );
 };

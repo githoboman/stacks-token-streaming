@@ -1,41 +1,27 @@
 import { useState, useEffect } from 'react';
 import { Connect } from '@stacks/connect-react';
 import { AppConfig, UserSession } from '@stacks/connect';
-import { Network } from '@stacks/network';
 import WalletConnect from './components/WalletConnect';
 import StreamDashboard from './components/StreamDashboard';
 import AnalyticsDashboard from './components/AnalyticsDashboard';
 import { BackgroundRippleEffect } from './components/ui/background-ripple-effect';
+import { useStreamingApp } from './hooks/useStreamingApp';
 import './App.css';
 
 const appConfig = new AppConfig(['store_write', 'publish_data']);
 const userSession = new UserSession({ appConfig });
 
 function App() {
-  const [userData, setUserData] = useState(null);
-  const [network, setNetwork] = useState(new Network({ name: 'testnet' }));
   const [activeTab, setActiveTab] = useState('streams');
 
-  useEffect(() => {
-    if (userSession.isSignInPending()) {
-      userSession.handlePendingSignIn().then((userData) => {
-        setUserData(userData);
-      });
-    } else if (userSession.isUserSignedIn()) {
-      setUserData(userSession.loadUserData());
-    }
-  }, []);
-
-  const handleSignOut = () => {
-    userSession.signUserOut();
-    setUserData(null);
-  };
+  // Use the comprehensive streaming app hook
+  const { wallet, streaming, analytics, state } = useStreamingApp();
 
   const authOptions = {
     redirectTo: '/',
     manifestPath: '/manifest.json',
     onFinish: (payload) => {
-      setUserData(payload);
+      // Wallet hook handles this automatically
     },
     userSession,
   };
@@ -47,9 +33,7 @@ function App() {
         <header className="App-header relative z-10">
           <h1>Stacks Token Streaming</h1>
           <WalletConnect
-            userSession={userSession}
-            userData={userData}
-            onSignOut={handleSignOut}
+            wallet={wallet}
           />
         </header>
 
@@ -69,19 +53,33 @@ function App() {
         </nav>
 
         <main className="App-main relative z-10">
-          {userData ? (
+          {wallet.isSignedIn ? (
             <>
               {activeTab === 'streams' && (
-                <StreamDashboard userSession={userSession} network={network} />
+                <StreamDashboard
+                  streaming={streaming}
+                  wallet={wallet}
+                  isLoading={state.isLoading}
+                />
               )}
               {activeTab === 'analytics' && (
-                <AnalyticsDashboard userSession={userSession} network={network} />
+                <AnalyticsDashboard
+                  analytics={analytics}
+                  wallet={wallet}
+                  isLoading={state.isLoading}
+                />
               )}
             </>
           ) : (
             <div className="connect-prompt">
               <h2>Welcome to Stacks Token Streaming</h2>
               <p>Please connect your wallet to start streaming tokens and view analytics.</p>
+              {state.error && (
+                <div className="error-message">
+                  <p>Error: {state.error}</p>
+                  <button onClick={state.utils?.clearError}>Dismiss</button>
+                </div>
+              )}
             </div>
           )}
         </main>
