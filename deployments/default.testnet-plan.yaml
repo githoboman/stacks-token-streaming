@@ -15,4 +15,11 @@ plan:
             path: "contracts\\stream.clar"
             anchor-block-only: true
             clarity-version: 3
+        - contract-publish:
+            contract-name: stream-analytics
+            expected-sender: ST9NSDHK5969YF6WJ2MRCVVAVTDENWBNTFJRVZ3E
+            cost: 150000
+            path: "contracts\\stream-analytics.clar"
+            anchor-block-only: true
+            clarity-version: 3
       epoch: "3.2"

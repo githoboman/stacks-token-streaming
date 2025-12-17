@@ -67,4 +67,9 @@ plan:
             emulated-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
             path: contracts/stream.clar
             clarity-version: 3
+        - emulated-contract-publish:
+            contract-name: stream-analytics
+            emulated-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
+            path: contracts/stream-analytics.clar
+            clarity-version: 3
       epoch: "3.2"
