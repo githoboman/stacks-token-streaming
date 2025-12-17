@@ -1,0 +1,27 @@
+version: 1
+chain: stacks
+uuid: "stream-withdrawal-hook-001"
+name: "Stream Withdrawal Analytics Hook"
+description: "Records analytics when tokens are withdrawn from a stream"
+
+networks:
+  testnet:
+    if_this:
+      contract_identifier: "ST9NSDHK5969YF6WJ2MRCVVAVTDENWBNTFJRVZ3E.stream"
+      method: "withdraw"
+    then_that:
+      contract_calls:
+        - contract_identifier: "ST9NSDHK5969YF6WJ2MRCVVAVTDENWBNTFJRVZ3E.stream-analytics"
+          method: "record-withdrawal"
+          args:
+            stream-id: "{$.tx.contract_call.args.stream-id}"
+            amount: "{$.tx.contract_call.return}"
+      http_post:
+        url: "http://localhost:3000/webhooks/stream-withdrawal"
+        body: |
+          {
+            "streamId": "{$.tx.contract_call.args.stream-id}",
+            "amount": "{$.tx.contract_call.return}",
+            "recipient": "{$.tx.sender}",
+            "txId": "{$.tx.txid}"
+          }

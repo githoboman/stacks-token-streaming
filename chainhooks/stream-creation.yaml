@@ -1,0 +1,34 @@
+version: 1
+chain: stacks
+uuid: "stream-creation-hook-001"
+name: "Stream Creation Analytics Hook"
+description: "Records analytics when a new stream is created"
+
+networks:
+  testnet:
+    if_this:
+      contract_identifier: "ST9NSDHK5969YF6WJ2MRCVVAVTDENWBNTFJRVZ3E.stream"
+      method: "stream-to"
+    then_that:
+      contract_calls:
+        - contract_identifier: "ST9NSDHK5969YF6WJ2MRCVVAVTDENWBNTFJRVZ3E.stream-analytics"
+          method: "record-stream-creation"
+          args:
+            stream-id: "{$.tx.contract_call.return}"
+            sender: "{$.tx.sender}"
+            recipient: "{$.tx.contract_call.args.recipient}"
+            total-amount: "{$.tx.contract_call.args.initial-balance}"
+            start-block: "{$.tx.contract_call.args.timeframe.start-block}"
+            end-block: "{$.tx.contract_call.args.timeframe.stop-block}"
+      http_post:
+        url: "http://localhost:3000/webhooks/stream-created"
+        body: |
+          {
+            "streamId": "{$.tx.contract_call.return}",
+            "sender": "{$.tx.sender}",
+            "recipient": "{$.tx.contract_call.args.recipient}",
+            "amount": "{$.tx.contract_call.args.initial-balance}",
+            "startBlock": "{$.tx.contract_call.args.timeframe.start-block}",
+            "endBlock": "{$.tx.contract_call.args.timeframe.stop-block}",
+            "txId": "{$.tx.txid}"
+          }

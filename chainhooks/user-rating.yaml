@@ -1,0 +1,22 @@
+version: 1
+chain: stacks
+uuid: "user-rating-hook-001"
+name: "User Rating Hook"
+description: "Handles user rating events"
+
+networks:
+  testnet:
+    if_this:
+      contract_identifier: "ST9NSDHK5969YF6WJ2MRCVVAVTDENWBNTFJRVZ3E.stream-analytics"
+      method: "rate-user"
+    then_that:
+      http_post:
+        url: "http://localhost:3000/webhooks/user-rated"
+        body: |
+          {
+            "ratedUser": "{$.tx.contract_call.args.rated}",
+            "rater": "{$.tx.sender}",
+            "streamId": "{$.tx.contract_call.args.stream-id}",
+            "rating": "{$.tx.contract_call.args.rating}",
+            "txId": "{$.tx.txid}"
+          }
