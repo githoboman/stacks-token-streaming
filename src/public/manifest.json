@@ -1,0 +1,15 @@
+{
+  "name": "Stacks Token Streaming",
+  "description": "Stream STX tokens over time with analytics and reputation tracking",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#3498db",
+  "icons": [
+    {
+      "src": "/logo.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    }
+  ]
+}

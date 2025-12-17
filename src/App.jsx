@@ -5,6 +5,7 @@ import { Network } from '@stacks/network';
 import WalletConnect from './components/WalletConnect';
 import StreamDashboard from './components/StreamDashboard';
 import AnalyticsDashboard from './components/AnalyticsDashboard';
+import { BackgroundRippleEffect } from './components/ui/background-ripple-effect';
 import './App.css';
 
 const appConfig = new AppConfig(['store_write', 'publish_data']);
@@ -41,8 +42,9 @@ function App() {
 
   return (
     <Connect authOptions={authOptions}>
-      <div className="App">
-        <header className="App-header">
+      <div className="App relative">
+        <BackgroundRippleEffect />
+        <header className="App-header relative z-10">
           <h1>Stacks Token Streaming</h1>
           <WalletConnect
             userSession={userSession}
@@ -51,7 +53,7 @@ function App() {
           />
         </header>
 
-        <nav className="App-nav">
+        <nav className="App-nav relative z-10">
           <button
             className={activeTab === 'streams' ? 'active' : ''}
             onClick={() => setActiveTab('streams')}
@@ -66,7 +68,7 @@ function App() {
           </button>
         </nav>
 
-        <main className="App-main">
+        <main className="App-main relative z-10">
           {userData ? (
             <>
               {activeTab === 'streams' && (
